@@ -64,13 +64,22 @@ WSGI_APPLICATION = 'photo_contest.wsgi.application'
 
 # Database via DATABASE_URL (safe sqlite fallback)
 sqlite_path = str(BASE_DIR / 'db.sqlite3').replace('\\', '/')
-default_sqlite_url = os.environ.get('DATABASE_URL', f"sqlite:///{sqlite_path}")
-DATABASES = {
-    'default': dj_database_url.config(
-        default=default_sqlite_url,
-        conn_max_age=600
-    )
-}
+default_sqlite_url = f"sqlite:///{sqlite_path}"
+if dj_database_url:
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=os.environ.get('DATABASE_URL', default_sqlite_url),
+            conn_max_age=600
+        )
+    }
+else:
+    # Minimal fallback configuration
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
