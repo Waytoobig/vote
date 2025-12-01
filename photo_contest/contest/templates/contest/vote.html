@@ -1,0 +1,363 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+    .candidates-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 30px;
+        margin-bottom: 40px;
+    }
+    
+    .candidate-card {
+        border: 3px solid transparent;
+        border-radius: 15px;
+        overflow: hidden;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: white;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        outline: none;
+        position: relative;
+    }
+    
+    .candidate-card:hover,
+    .candidate-card:focus {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+    
+    .candidate-card.selected {
+        border-color: #667eea;
+        background: #f0f4ff;
+    }
+    
+    .candidate-image-container {
+        position: relative;
+        width: 100%;
+        height: 250px;
+        overflow: hidden;
+    }
+    
+    .candidate-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        transition: transform 0.3s ease;
+    }
+    
+    .candidate-card:hover .candidate-image {
+        transform: scale(1.05);
+    }
+    
+    .image-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(transparent, rgba(0,0,0,0.7));
+        padding: 20px 15px 15px;
+        color: white;
+    }
+    
+    .image-name {
+        font-size: 1.4em;
+        font-weight: bold;
+        margin: 0;
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+    }
+    
+    .candidate-info {
+        padding: 20px;
+        text-align: center;
+    }
+    
+    .candidate-name {
+        font-size: 1.3em;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 10px;
+    }
+    
+    .candidate-description {
+        color: #666;
+        line-height: 1.5;
+        font-size: 0.95em;
+    }
+    
+    .photographer {
+        color: #888;
+        font-style: italic;
+        margin-top: 8px;
+        font-size: 0.9em;
+    }
+    
+    .vote-form {
+        text-align: center;
+    }
+    
+    .submit-btn {
+        background: linear-gradient(135deg, #4CAF50, #45a049);
+        font-size: 1.2em;
+        padding: 15px 50px;
+    }
+    
+    .submit-btn:disabled {
+        background: #cccccc;
+        cursor: not-allowed;
+        transform: none;
+    }
+    
+    .selection-hint {
+        text-align: center;
+        color: #667eea;
+        margin-bottom: 20px;
+        font-style: italic;
+        font-size: 1.1em;
+    }
+
+    .selection-info {
+        text-align: center;
+        margin-top: 10px;
+        font-weight: bold;
+        color: #4CAF50;
+        min-height: 24px;
+    }
+
+    /* Hide native radio visually but keep it accessible */
+    .hidden {
+        position: absolute !important;
+        left: -9999px !important;
+        width: 1px !important;
+        height: 1px !important;
+        overflow: hidden !important;
+    }
+
+    .selected-indicator {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: #4CAF50;
+        color: white;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    }
+
+    .candidate-card.selected .selected-indicator {
+        opacity: 1;
+    }
+
+    .category-badge {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        background: rgba(102, 126, 234, 0.9);
+        color: white;
+        padding: 5px 10px;
+        border-radius: 15px;
+        font-size: 0.8em;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="vote-page">
+    <h2 style="text-align: center; color: #667eea; margin-bottom: 10px;">Cast Your Vote</h2>
+    <p style="text-align: center; margin-bottom: 30px; color: #666;">
+        Click on your favorite photo to select it, then submit your vote. Each photo has a unique name and description.
+    </p>
+    
+    <form method="post" class="vote-form" id="voteForm">
+        {% csrf_token %}
+        
+        <div class="selection-hint" id="selectionHint">
+            Please select one photo to vote for
+        </div>
+        
+        <div class="candidates-grid" role="list" aria-label="Photo contest candidates">
+            {% for candidate in candidates %}
+            <div class="candidate-card" 
+                 data-candidate-id="{{ candidate.id }}" 
+                 tabindex="0" 
+                 role="radio" 
+                 aria-checked="false"
+                 aria-label="Select {{ candidate.name }} - {{ candidate.description }}">
+                
+                <!-- Selected indicator -->
+                <div class="selected-indicator" aria-hidden="true">✓</div>
+                
+                <!-- Image with overlay name -->
+                <div class="candidate-image-container">
+                    {% if candidate.image %}
+                        <img src="{{ candidate.image.url }}" alt="{{ candidate.name }} - {{ candidate.description }}" class="candidate-image">
+                    {% else %}
+                        <img src="{% static 'contest/img/placeholder.png' %}" alt="No image available for {{ candidate.name }}" class="candidate-image">
+                    {% endif %}
+                    
+                    <!-- Name overlay on image -->
+                    <div class="image-overlay">
+                        <h3 class="image-name">{{ candidate.name }}</h3>
+                    </div>
+                </div>
+                
+                <!-- Detailed information -->
+                <div class="candidate-info">
+                    <div class="candidate-name">{{ candidate.name }}</div>
+                    {% if candidate.description %}
+                    <div class="candidate-description">{{ candidate.description }}</div>
+                    {% endif %}
+                    {% if candidate.photographer %}
+                    <div class="photographer">By: {{ candidate.photographer }}</div>
+                    {% endif %}
+                </div>
+                
+                <!-- Hidden radio input -->
+                <input type="radio" name="candidate" value="{{ candidate.id }}" class="hidden" 
+                       id="candidate_{{ candidate.id }}" required
+                       aria-labelledby="candidate_name_{{ candidate.id }}">
+            </div>
+            {% empty %}
+            <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
+                <p style="font-size: 1.2em; color: #666;">No candidates available for voting at the moment.</p>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Current selection display -->
+        <div class="selection-info" id="currentSelection" aria-live="polite">
+            <!-- Will be populated by JavaScript -->
+        </div>
+        
+        <button type="submit" class="btn submit-btn" id="submitBtn" disabled aria-describedby="selectionHint">
+            Submit Vote for Selected Photo
+        </button>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const candidateCards = Array.from(document.querySelectorAll('.candidate-card'));
+    const submitBtn = document.getElementById('submitBtn');
+    const selectionHint = document.getElementById('selectionHint');
+    const currentSelection = document.getElementById('currentSelection');
+    const form = document.getElementById('voteForm');
+    
+    let selectedCandidate = null;
+
+    function selectCard(card) {
+        // Remove selection from all cards
+        candidateCards.forEach(c => {
+            c.classList.remove('selected');
+            c.setAttribute('aria-checked', 'false');
+        });
+        
+        // Add selection to clicked card
+        card.classList.add('selected');
+        card.setAttribute('aria-checked', 'true');
+        
+        // Update the radio input
+        const radio = card.querySelector('input[type="radio"]');
+        if (radio) {
+            radio.checked = true;
+            radio.focus();
+        }
+        
+        // Enable submit button
+        submitBtn.disabled = false;
+        
+        // Update selection display
+        const candidateName = card.querySelector('.candidate-name').textContent;
+        const candidateDescription = card.querySelector('.candidate-description')?.textContent || '';
+        
+        selectedCandidate = {
+            name: candidateName,
+            description: candidateDescription
+        };
+        
+        updateSelectionDisplay();
+        
+        // Update hint
+        selectionHint.textContent = 'Photo selected! Click "Submit Vote" to confirm.';
+        selectionHint.style.color = '#4CAF50';
+    }
+    
+    function updateSelectionDisplay() {
+        if (selectedCandidate) {
+            currentSelection.innerHTML = `
+                Currently selected: <strong>"${selectedCandidate.name}"</strong>
+                ${selectedCandidate.description ? `- ${selectedCandidate.description}` : ''}
+            `;
+            currentSelection.style.color = '#4CAF50';
+        } else {
+            currentSelection.textContent = '';
+        }
+    }
+    
+    // Add event listeners to candidate cards
+    candidateCards.forEach(card => {
+        card.addEventListener('click', function() { 
+            selectCard(this); 
+        });
+        
+        card.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                selectCard(this);
+            }
+        });
+        
+        // Improve keyboard navigation
+        card.addEventListener('focus', function() {
+            this.style.outline = '2px solid #667eea';
+            this.style.outlineOffset = '2px';
+        });
+        
+        card.addEventListener('blur', function() {
+            this.style.outline = 'none';
+        });
+    });
+    
+    // Form submission handling
+    form.addEventListener('submit', function(e) {
+        const selectedCard = document.querySelector('.candidate-card.selected');
+        if (!selectedCard) {
+            e.preventDefault();
+            alert('Please select a photo to vote for.');
+            return;
+        }
+        
+        const candidateName = selectedCard.querySelector('.candidate-name').textContent;
+        const confirmed = confirm(`Are you sure you want to vote for "${candidateName}"? This action cannot be undone.`);
+        
+        if (!confirmed) {
+            e.preventDefault();
+        } else {
+            // Disable form during submission to prevent double voting
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting Vote...';
+        }
+    });
+    
+    // Handle Enter key on form
+    form.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !submitBtn.disabled) {
+            e.preventDefault();
+            form.dispatchEvent(new Event('submit'));
+        }
+    });
+});
+</script>
+{% endblock %}

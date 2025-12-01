@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+
+{% block extra_css %}
+<style>
+    .results-header {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+    
+    .user-vote {
+        background: #e8f5e8;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 30px;
+        text-align: center;
+        border-left: 5px solid #4CAF50;
+    }
+    
+    .results-list {
+        display: grid;
+        gap: 20px;
+    }
+    
+    .result-item {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        border-left: 5px solid #667eea;
+    }
+    
+    .result-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+    
+    .candidate-name {
+        font-size: 1.3em;
+        font-weight: bold;
+        color: #333;
+    }
+    
+    .vote-stats {
+        text-align: right;
+        font-weight: bold;
+        color: #667eea;
+    }
+    
+    .progress-bar {
+        width: 100%;
+        height: 20px;
+        background: #f0f0f0;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        border-radius: 10px;
+        transition: width 0.5s ease;
+    }
+    
+    .winner-badge {
+        background: #ffd700;
+        color: #333;
+        padding: 5px 15px;
+        border-radius: 15px;
+        font-weight: bold;
+        margin-left: 10px;
+    }
+    
+    .total-votes {
+        text-align: center;
+        margin-top: 30px;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 10px;
+    }
+    
+    .your-vote {
+        background: #4CAF50;
+        color: white;
+        padding: 3px 8px;
+        border-radius: 5px;
+        font-size: 0.8em;
+        margin-left: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="results-page">
+    <div class="results-header">
+        <h2 style="color: #667eea;">Contest Results</h2>
+        <p style="color: #666;">Thank you for participating in the vote!</p>
+    </div>
+    
+    {% if user_vote %}
+    <div class="user-vote">
+        <strong>Your vote:</strong> You voted for "<em>{{ user_vote.candidate.name }}</em>"
+    </div>
+    {% endif %}
+    
+    <div class="results-list">
+        {% for candidate in results %}
+        <div class="result-item">
+            <div class="result-header">
+                <div>
+                    <span class="candidate-name">{{ candidate.name }}</span>
+                    {% if forloop.first and total_votes > 0 %}
+                    <span class="winner-badge">🏆 Winner</span>
+                    {% endif %}
+                    {% if user_vote and user_vote.candidate.id == candidate.id %}
+                    <span class="your-vote">Your Vote</span>
+                    {% endif %}
+                </div>
+                <div class="vote-stats">
+                    {{ candidate.vote_count }} votes ({{ candidate.percentage|floatformat:1 }}%)
+                </div>
+            </div>
+            
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: {{ candidate.percentage }}%"></div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="total-votes">
+        <h3>Total Votes: {{ total_votes }}</h3>
+    </div>
+    
+    <div style="text-align: center; margin-top: 30px;">
+        <a href="{% url 'contest:index' %}" class="btn">Return to Home</a>
+    </div>
+</div>
+{% endblock %}
