@@ -21,11 +21,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECRET_KEY from env; require in production
 SECRET_KEY = os.environ.get('SECRET_KEY')
-# DEBUG fallback for local development
 DEBUG = os.environ.get('DEBUG', 'False').lower() in ('1', 'true', 'yes')
 
 if not SECRET_KEY:
     if DEBUG:
+        # development fallback ONLY
         SECRET_KEY = 'dev-secret-key-change-me'
     else:
         raise RuntimeError("SECRET_KEY environment variable is required in production")
