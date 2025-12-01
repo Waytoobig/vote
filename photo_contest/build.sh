@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
-# build.sh
+# build.sh for Render
 
-set -o errexit
+echo "Starting build process..."
 
 # Install Python dependencies
 pip install -r requirements.txt
 
-# Collect static files
-python manage.py collectstatic --noinput
-
 # Apply database migrations
-python manage.py migrate
+python manage.py migrate --noinput
+
+# Collect static files
+python manage.py collectstatic --noinput --clear
+
+echo "Build completed successfully!"

@@ -1,9 +1,9 @@
 services:
   - type: web
     name: photo-contest
-    runtime: python
+    env: python
     plan: free
-    autoDeploy: true
+    region: oregon  # or your preferred region
     buildCommand: "./build.sh"
     startCommand: "gunicorn photo_contest.wsgi:application"
     envVars:
@@ -11,15 +11,11 @@ services:
         value: 3.11.0
       - key: SECRET_KEY
         generateValue: true
-      - key: WEB_CONCURRENCY
-        value: 4
+      - key: DEBUG
+        value: false
+      - key: DISABLE_COLLECTSTATIC
+        value: 0
     disk:
-      name: media
+      name: data
       mountPath: /opt/render/project/src/media
       sizeGB: 1
-
-databases:
-  - name: photo-contest-db
-    plan: free
-    databaseName: photo_contest
-    user: photo_contest_user
