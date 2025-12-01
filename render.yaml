@@ -3,14 +3,11 @@ services:
     name: photo-contest
     env: python
     plan: free
-    region: oregon
+
     pythonVersion: 3.11.0
 
     buildCommand: "./build.sh"
-    startCommand: "gunicorn photo_contest.wsgi:application --bind 0.0.0.0:$PORT"
-
-
-    postdeployCommand: "python manage.py migrate --noinput"
+    startCommand: "gunicorn photo_contest.photo_contest.wsgi:application --bind 0.0.0.0:$PORT"
 
     envVars:
       - key: SECRET_KEY

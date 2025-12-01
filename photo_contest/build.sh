@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
-echo "Starting build process..."
+echo "Starting build..."
 
-# Install requirements
 pip install -r requirements.txt
 
-# Collect static files
-python manage.py collectstatic --noinput --clear
+python photo_contest/manage.py migrate --noinput
+python photo_contest/manage.py collectstatic --noinput --clear
 
-echo "Build completed successfully!"
+echo "Build complete!"
