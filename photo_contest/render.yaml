@@ -3,18 +3,22 @@ services:
     name: photo-contest
     env: python
     plan: free
-    region: oregon  # or your preferred region
+    region: oregon
+    pythonVersion: 3.11.0
+
     buildCommand: "./build.sh"
-    startCommand: "gunicorn photo_contest.wsgi:application"
+    startCommand: "gunicorn photo_contest.wsgi:application --bind 0.0.0.0:$PORT"
+
+    postdeployCommand: "python manage.py migrate --noinput"
+
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.0
       - key: SECRET_KEY
         generateValue: true
       - key: DEBUG
         value: false
       - key: DISABLE_COLLECTSTATIC
         value: 0
+
     disk:
       name: data
       mountPath: /opt/render/project/src/media
