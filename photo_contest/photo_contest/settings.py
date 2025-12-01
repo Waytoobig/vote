@@ -35,6 +35,18 @@ ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS if host.strip()]
 if DEBUG:
     ALLOWED_HOSTS.extend(['localhost', '127.0.0.1', '0.0.0.0'])
 
+# Render sets RENDER_EXTERNAL_HOSTNAME for the service URL — include it automatically
+render_host = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+if render_host and render_host not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(render_host)
+
+# Safety: if running in production (DEBUG False) require non-empty ALLOWED_HOSTS
+if not DEBUG and not ALLOWED_HOSTS:
+    raise RuntimeError(
+        "ALLOWED_HOSTS must be set when DEBUG is False. "
+        "Set the ALLOWED_HOSTS env var (comma-separated) or ensure RENDER_EXTERNAL_HOSTNAME is available."
+    )
+
 # Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
