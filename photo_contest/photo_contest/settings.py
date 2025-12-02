@@ -55,7 +55,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'contest',
+    'photo_contest.contest',
 ]
 
 MIDDLEWARE = [
@@ -69,7 +69,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = "photo_contest.urls"
+ROOT_URLCONF = "photo_contest.photo_contest.urls"
 
 TEMPLATES = [
     {
