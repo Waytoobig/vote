@@ -87,11 +87,13 @@
         font-size: 0.95em;
     }
     
-    .photographer {
-        color: #888;
-        font-style: italic;
-        margin-top: 8px;
-        font-size: 0.9em;
+    .vote-form input[type="text"] {
+        width: 100%;
+        padding: 10px;
+        font-size: 1em;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        margin-bottom: 20px;
     }
     
     .vote-form {
@@ -102,6 +104,10 @@
         background: linear-gradient(135deg, #4CAF50, #45a049);
         font-size: 1.2em;
         padding: 15px 50px;
+        border: none;
+        color: white;
+        border-radius: 8px;
+        cursor: pointer;
     }
     
     .submit-btn:disabled {
@@ -176,9 +182,12 @@
     <h2 style="text-align: center; color: #667eea; margin-bottom: 10px;">Cast Your Vote</h2>
     <p style="text-align: center; margin-bottom: 30px; color: #666;">
         Click on your favorite player to select him, then submit your vote.
-    
+    </p>
+
     <form method="post" class="vote-form" id="voteForm">
         {% csrf_token %}
+        
+        <input type="text" name="voter_name" placeholder="Your Name" required>
         
         <div class="selection-hint" id="selectionHint">
             Please select one player to vote for
@@ -191,40 +200,29 @@
                  tabindex="0" 
                  role="radio" 
                  aria-checked="false"
-                 aria-label="Select {{ candidate.name }} - {{ candidate.description }}">
+                 aria-label="Select {{ candidate.name }}">
                 
-                <!-- Selected indicator -->
                 <div class="selected-indicator" aria-hidden="true">✓</div>
                 
-                <!-- Image with overlay name -->
                 <div class="candidate-image-container">
                     {% if candidate.image %}
-                        <img src="{{ candidate.image.url }}" alt="{{ candidate.name }} - {{ candidate.description }}" class="candidate-image">
+                        <img src="{{ candidate.image.url }}" alt="{{ candidate.name }}" class="candidate-image">
                     {% else %}
-                        <img src="{% static 'contest/img/placeholder.png' %}" alt="No image available for {{ candidate.name }}" class="candidate-image">
+                        <img src="{% static 'contest/img/placeholder.png' %}" alt="No image" class="candidate-image">
                     {% endif %}
-                    
-                    <!-- Name overlay on image -->
                     <div class="image-overlay">
-                        <h3 class="image-name">{{ candidate.name }}</h3>
+                        <h3 class="image-name" id="candidate_name_{{ candidate.id }}">{{ candidate.name }}</h3>
                     </div>
                 </div>
                 
-                <!-- Detailed information -->
                 <div class="candidate-info">
                     <div class="candidate-name">{{ candidate.name }}</div>
                     {% if candidate.description %}
                     <div class="candidate-description">{{ candidate.description }}</div>
                     {% endif %}
-                    {% if candidate.photographer %}
-                    <div class="photographer">By: {{ candidate.photographer }}</div>
-                    {% endif %}
                 </div>
                 
-                <!-- Hidden radio input -->
-                <input type="radio" name="candidate" value="{{ candidate.id }}" class="hidden" 
-                       id="candidate_{{ candidate.id }}" required
-                       aria-labelledby="candidate_name_{{ candidate.id }}">
+                <input type="radio" name="candidate" value="{{ candidate.id }}" class="hidden" id="candidate_{{ candidate.id }}" required aria-labelledby="candidate_name_{{ candidate.id }}">
             </div>
             {% empty %}
             <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
@@ -233,14 +231,9 @@
             {% endfor %}
         </div>
 
-        <!-- Current selection display -->
-        <div class="selection-info" id="currentSelection" aria-live="polite">
-            <!-- Will be populated by JavaScript -->
-        </div>
+        <div class="selection-info" id="currentSelection" aria-live="polite"></div>
         
-        <button type="submit" class="btn submit-btn" id="submitBtn" disabled aria-describedby="selectionHint">
-            Submit Vote for Selected Photo
-        </button>
+        <button type="submit" class="btn submit-btn" id="submitBtn" disabled>Submit Vote</button>
     </form>
 </div>
 {% endblock %}
@@ -257,38 +250,28 @@ document.addEventListener('DOMContentLoaded', function() {
     let selectedCandidate = null;
 
     function selectCard(card) {
-        // Remove selection from all cards
         candidateCards.forEach(c => {
             c.classList.remove('selected');
             c.setAttribute('aria-checked', 'false');
         });
         
-        // Add selection to clicked card
         card.classList.add('selected');
         card.setAttribute('aria-checked', 'true');
         
-        // Update the radio input
         const radio = card.querySelector('input[type="radio"]');
         if (radio) {
             radio.checked = true;
             radio.focus();
         }
         
-        // Enable submit button
         submitBtn.disabled = false;
         
-        // Update selection display
         const candidateName = card.querySelector('.candidate-name').textContent;
         const candidateDescription = card.querySelector('.candidate-description')?.textContent || '';
         
-        selectedCandidate = {
-            name: candidateName,
-            description: candidateDescription
-        };
-        
+        selectedCandidate = { name: candidateName, description: candidateDescription };
         updateSelectionDisplay();
         
-        // Update hint
         selectionHint.textContent = 'Photo selected! Click "Submit Vote" to confirm.';
         selectionHint.style.color = '#4CAF50';
     }
@@ -305,56 +288,40 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Add event listeners to candidate cards
     candidateCards.forEach(card => {
-        card.addEventListener('click', function() { 
-            selectCard(this); 
-        });
-        
+        card.addEventListener('click', function() { selectCard(this); });
         card.addEventListener('keydown', function(e) {
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 selectCard(this);
             }
         });
-        
-        // Improve keyboard navigation
-        card.addEventListener('focus', function() {
-            this.style.outline = '2px solid #667eea';
-            this.style.outlineOffset = '2px';
-        });
-        
-        card.addEventListener('blur', function() {
-            this.style.outline = 'none';
-        });
+        card.addEventListener('focus', function() { this.style.outline = '2px solid #667eea'; this.style.outlineOffset = '2px'; });
+        card.addEventListener('blur', function() { this.style.outline = 'none'; });
     });
     
-    // Form submission handling
     form.addEventListener('submit', function(e) {
         const selectedCard = document.querySelector('.candidate-card.selected');
         if (!selectedCard) {
             e.preventDefault();
-            alert('Please select a photo to vote for.');
+            alert('Please select a player to vote for.');
             return;
         }
         
+        const voterName = form.querySelector('input[name="voter_name"]').value.trim();
+        if (!voterName) {
+            e.preventDefault();
+            alert('Please enter your name before voting.');
+            return;
+        }
+
         const candidateName = selectedCard.querySelector('.candidate-name').textContent;
         const confirmed = confirm(`Are you sure you want to vote for "${candidateName}"? This action cannot be undone.`);
         
-        if (!confirmed) {
-            e.preventDefault();
-        } else {
-            // Disable form during submission to prevent double voting
+        if (!confirmed) e.preventDefault();
+        else {
             submitBtn.disabled = true;
             submitBtn.textContent = 'Submitting Vote...';
-        }
-    });
-    
-    // Handle Enter key on form
-    form.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' && !submitBtn.disabled) {
-            e.preventDefault();
-            form.dispatchEvent(new Event('submit'));
         }
     });
 });

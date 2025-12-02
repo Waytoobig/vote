@@ -3,7 +3,7 @@ from django.apps import AppConfig
 
 class ContestConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'photo_contest.contest'
+    name = 'contest'
 
 
 
