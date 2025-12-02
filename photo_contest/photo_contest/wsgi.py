@@ -17,4 +17,5 @@ _static_root.mkdir(parents=True, exist_ok=True)
 
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "photo_contest.photo_contest.settings")
+
 application = get_wsgi_application()
